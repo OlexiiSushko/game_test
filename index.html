@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<title>Racing Game</title>
+
+<style>
+body{
+    margin:0;
+    overflow:hidden;
+    background:#222;
+}
+
+canvas{
+    background:#555;
+    display:block;
+    margin:auto;
+}
+</style>
+</head>
+
+<body>
+
+<canvas id="gameCanvas"></canvas>
+
+<script>
+const canvas = document.getElementById("gameCanvas");
+const ctx = canvas.getContext("2d");
+
+canvas.width = 400;
+canvas.height = 700;
+
+let mouseX = canvas.width / 2;
+let gameOver = false;
+let score = 0;
+let speed = 6;
+
+// Машина
+const car = {
+    x: 185,
+    y: 600,
+    width: 30,
+    height: 55
+};
+
+// Перешкоди
+let obstacles = [];
+
+// Курсор
+document.addEventListener("mousemove", (e) => {
+    const rect = canvas.getBoundingClientRect();
+    mouseX = e.clientX - rect.left;
+});
+
+// Створення перешкод
+function createObstacle(){
+
+    obstacles.push({
+        x: Math.random() * 300 + 40,
+        y: -120,
+        width: 60,
+        height: 100
+    });
+}
+
+// Дорога
+function drawRoad(){
+
+    ctx.fillStyle = "#666";
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+
+    // Бокові лінії
+    ctx.fillStyle = "white";
+
+    ctx.fillRect(40,0,5,700);
+    ctx.fillRect(355,0,5,700);
+
+    // Розмітка
+    for(let i=0;i<20;i++){
+
+        ctx.fillRect(
+            195,
+            (i * 50 + performance.now()/10) % 750,
+            10,
+            30
+        );
+    }
+}
+
+// Машина
+function drawCar(){
+
+    // Корпус
+    ctx.fillStyle = "red";
+    ctx.fillRect(car.x, car.y, car.width, car.height);
+
+    // Скло
+    ctx.fillStyle = "lightblue";
+    ctx.fillRect(car.x + 5, car.y + 10, 20, 12);
+
+    // Колеса
+    ctx.fillStyle = "black";
+
+    ctx.fillRect(car.x - 4, car.y + 8, 6, 12);
+    ctx.fillRect(car.x - 4, car.y + 35, 6, 12);
+
+    ctx.fillRect(car.x + 28, car.y + 8, 6, 12);
+    ctx.fillRect(car.x + 28, car.y + 35, 6, 12);
+}
+
+// Перешкоди
+function drawObstacles(){
+
+    obstacles.forEach(obs => {
+
+        ctx.fillStyle = "black";
+        ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
+
+        obs.y += speed;
+
+        // Зіткнення
+        if(
+            car.x < obs.x + obs.width &&
+            car.x + car.width > obs.x &&
+            car.y < obs.y + obs.height &&
+            car.y + car.height > obs.y
+        ){
+            gameOver = true;
+        }
+    });
+
+    obstacles = obstacles.filter(obs => {
+
+        if(obs.y > canvas.height){
+            score++;
+            return false;
+        }
+
+        return true;
+    });
+}
+
+// UI
+function drawUI(){
+
+    ctx.fillStyle = "white";
+    ctx.font = "30px Arial";
+    ctx.fillText("Score: " + score, 20, 40);
+
+    if(gameOver){
+
+        ctx.fillStyle = "yellow";
+        ctx.font = "50px Arial";
+        ctx.fillText("GAME OVER", 40, 350);
+    }
+}
+
+// Оновлення
+function update(){
+
+    if(gameOver) return;
+
+    // Рух машини
+    car.x += ((mouseX - 30) - car.x) * 0.2;
+
+    // Межі
+    if(car.x < 45) car.x = 45;
+    if(car.x > 295) car.x = 295;
+
+    // Прискорення
+    speed = 6 + score * 0.1;
+}
+
+// Головний цикл
+function gameLoop(){
+
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+
+    drawRoad();
+
+    update();
+
+    drawCar();
+
+    drawObstacles();
+
+    drawUI();
+
+    requestAnimationFrame(gameLoop);
+}
+
+// Нові перешкоди
+setInterval(() => {
+
+    if(!gameOver){
+        createObstacle();
+    }
+
+}, 1000);
+
+gameLoop();
+
+</script>
+
+</body>
+</html>
